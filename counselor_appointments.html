@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counselor Appointments - MindWell</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4a90e2;
+            --secondary-color: #7b68ee;
+            --accent-color: #50c878;
+            --warning-color: #ffa500;
+            --danger-color: #ff6b6b;
+            --dark-color: #2c3e50;
+            --light-color: #f8f9fa;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.1) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin: 20px auto;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .appointment-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+
+        .appointment-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-confirmed { background-color: #d4edda; color: #155724; }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-cancelled { background-color: #f8d7da; color: #721c24; }
+        .status-completed { background-color: #d1ecf1; color: #0c5460; }
+
+        .btn-custom {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            color: white;
+        }
+
+        .slot-time {
+            background: var(--light-color);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin: 5px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .slot-time.available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .slot-time.booked {
+            background: #f8d7da;
+            color: #721c24;
+            cursor: not-allowed;
+        }
+
+        .slot-time.selected {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-container {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-section {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading-spinner .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            border-width: 0.3em;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                margin: 10px;
+                padding: 20px;
+            }
+            
+            .appointment-card {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-heart me-2"></i>MindWell
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="appointment.html">Book Appointment</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="wellness_challanges.html">Wellness Challenges</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="forum.html">Community Forum</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item dropdown" id="user-nav-item" style="display: none;">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user me-1"></i>
+                            <span id="userName"></span>
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" href="appointments.html">My Appointments</a></li>
+                            <li><a class="dropdown-item" href="counselor_appointments.html">Counselor Dashboard</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="logout()">Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container main-content">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">
+                    <i class="fas fa-calendar-alt me-3 text-primary"></i>
+                    Counselor Appointment Dashboard
+                </h1>
+                
+                <!-- Statistics Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card text-center">
+                            <h3 id="totalAppointments">0</h3>
+                            <p class="mb-0">Total Appointments</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card text-center">
+                            <h3 id="todayAppointments">0</h3>
+                            <p class="mb-0">Today's Appointments</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card text-center">
+                            <h3 id="pendingAppointments">0</h3>
+                            <p class="mb-0">Pending</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="stats-card text-center">
+                            <h3 id="availableSlots">0</h3>
+                            <p class="mb-0">Available Slots</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mb-4">
+                    <div class="col-12 text-center">
+                        <button class="btn btn-custom me-2" onclick="showSlotModal()">
+                            <i class="fas fa-plus me-2"></i>Add Time Slots
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="loadCounselorAppointments()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label for="statusFilter" class="form-label">Filter by Status:</label>
+                            <select class="form-select" id="statusFilter" onchange="filterAppointments()">
+                                <option value="">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="confirmed">Confirmed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="dateFilter" class="form-label">Filter by Date:</label>
+                            <input type="date" class="form-control" id="dateFilter" onchange="filterAppointments()">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="searchInput" class="form-label">Search:</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Search by client name..." onkeyup="filterAppointments()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-3">Loading appointments...</p>
+                </div>
+
+                <!-- Appointments List -->
+                <div id="appointmentsContainer">
+                    <!-- Appointments will be loaded here -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <i class="fas fa-calendar-times"></i>
+                    <h4>No Appointments Found</h4>
+                    <p>You don't have any appointments scheduled yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Time Slots Modal -->
+    <div class="modal fade" id="slotModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-clock me-2"></i>Add Time Slots
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="slotForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="slotDate" class="form-label">Date:</label>
+                                    <input type="date" class="form-control" id="slotDate" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="slotDuration" class="form-label">Duration (minutes):</label>
+                                    <select class="form-select" id="slotDuration" required>
+                                        <option value="30">30 minutes</option>
+                                        <option value="45">45 minutes</option>
+                                        <option value="60">60 minutes</option>
+                                        <option value="90">90 minutes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Available Time Slots:</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="09:00" id="time09">
+                                        <label class="form-check-label" for="time09">9:00 AM</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="10:00" id="time10">
+                                        <label class="form-check-label" for="time10">10:00 AM</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="11:00" id="time11">
+                                        <label class="form-check-label" for="time11">11:00 AM</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="14:00" id="time14">
+                                        <label class="form-check-label" for="time14">2:00 PM</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="15:00" id="time15">
+                                        <label class="form-check-label" for="time15">3:00 PM</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="16:00" id="time16">
+                                        <label class="form-check-label" for="time16">4:00 PM</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="17:00" id="time17">
+                                        <label class="form-check-label" for="time17">5:00 PM</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="18:00" id="time18">
+                                        <label class="form-check-label" for="time18">6:00 PM</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="19:00" id="time19">
+                                        <label class="form-check-label" for="time19">7:00 PM</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-custom" onclick="addTimeSlots()">
+                        <i class="fas fa-plus me-2"></i>Add Slots
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="auth.js"></script>
+    
+    <script>
+        // Check authentication and load appointments
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+            loadCounselorAppointments();
+            
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('slotDate').min = today;
+            document.getElementById('dateFilter').min = today;
+        });
+
+        // Load counselor appointments
+        async function loadCounselorAppointments() {
+            showLoading(true);
+            
+            try {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const response = await fetch('/api/appointments/counselor', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    displayAppointments(data.appointments);
+                    updateStatistics(data.appointments);
+                } else if (response.status === 401) {
+                    window.location.href = 'login.html';
+                } else {
+                    console.error('Failed to load appointments');
+                    showEmptyState();
+                }
+            } catch (error) {
+                console.error('Error loading appointments:', error);
+                showEmptyState();
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Display appointments
+        function displayAppointments(appointments) {
+            const container = document.getElementById('appointmentsContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (!appointments || appointments.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            
+            // Sort appointments by date and time
+            appointments.sort((a, b) => {
+                const dateA = new Date(a.date + ' ' + a.time);
+                const dateB = new Date(b.date + ' ' + b.time);
+                return dateA - dateB;
+            });
+
+            container.innerHTML = appointments.map(appointment => {
+                const appointmentDate = new Date(appointment.date);
+                const formattedDate = appointmentDate.toLocaleDateString();
+                const formattedTime = formatTime(appointment.time);
+                
+                return `
+                    <div class="appointment-card" data-status="${appointment.status}" data-date="${appointment.date}">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h6 class="mb-1">${appointment.user_name || 'Client #' + appointment.user_id}</h6>
+                                <p class="text-muted mb-0">${appointment.concern_type}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p class="mb-1"><i class="fas fa-calendar me-2"></i>${formattedDate}</p>
+                                <p class="mb-0"><i class="fas fa-clock me-2"></i>${formattedTime}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <span class="status-badge status-${appointment.status}">
+                                    ${appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
+                                </span>
+                                ${appointment.notes ? `<p class="text-muted mb-0 mt-1"><small>${appointment.notes}</small></p>` : ''}
+                            </div>
+                            <div class="col-md-3 text-end">
+                                ${getActionButtons(appointment)}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Get action buttons based on appointment status
+        function getActionButtons(appointment) {
+            const today = new Date().toISOString().split('T')[0];
+            const appointmentDate = appointment.date;
+            
+            if (appointment.status === 'pending') {
+                return `
+                    <button class="btn btn-sm btn-success me-1" onclick="updateAppointmentStatus(${appointment.id}, 'confirmed')" title="Confirm">
+                        <i class="fas fa-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger me-1" onclick="updateAppointmentStatus(${appointment.id}, 'cancelled')" title="Cancel">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+            } else if (appointment.status === 'confirmed' && appointmentDate >= today) {
+                return `
+                    <button class="btn btn-sm btn-primary me-1" onclick="joinAppointment(${appointment.id})" title="Join Session">
+                        <i class="fas fa-video"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning me-1" onclick="updateAppointmentStatus(${appointment.id}, 'cancelled')" title="Cancel">
+                        <i class="fas fa-calendar-times"></i>
+                    </button>
+                `;
+            } else if (appointment.status === 'confirmed' && appointmentDate < today) {
+                return `
+                    <button class="btn btn-sm btn-info me-1" onclick="updateAppointmentStatus(${appointment.id}, 'completed')" title="Mark Complete">
+                        <i class="fas fa-check-circle"></i>
+                    </button>
+                `;
+            }
+            return '';
+        }
+
+        // Update statistics
+        function updateStatistics(appointments) {
+            const today = new Date().toISOString().split('T')[0];
+            const todayAppointments = appointments.filter(a => a.date === today).length;
+            const pendingAppointments = appointments.filter(a => a.status === 'pending').length;
+            
+            document.getElementById('totalAppointments').textContent = appointments.length;
+            document.getElementById('todayAppointments').textContent = todayAppointments;
+            document.getElementById('pendingAppointments').textContent = pendingAppointments;
+            
+            // For available slots, we'll need to fetch them separately
+            loadAvailableSlots();
+        }
+
+        // Load available slots
+        async function loadAvailableSlots() {
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/appointment-slots', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('availableSlots').textContent = data.length;
+                }
+            } catch (error) {
+                console.error('Error loading available slots:', error);
+            }
+        }
+
+        // Filter appointments
+        function filterAppointments() {
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dateFilter = document.getElementById('dateFilter').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            
+            const appointmentCards = document.querySelectorAll('.appointment-card');
+            
+            appointmentCards.forEach(card => {
+                const status = card.getAttribute('data-status');
+                const date = card.getAttribute('data-date');
+                const clientName = card.querySelector('h6').textContent.toLowerCase();
+                
+                let show = true;
+                
+                if (statusFilter && status !== statusFilter) {
+                    show = false;
+                }
+                
+                if (dateFilter && date !== dateFilter) {
+                    show = false;
+                }
+                
+                if (searchInput && !clientName.includes(searchInput)) {
+                    show = false;
+                }
+                
+                card.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        // Show slot modal
+        function showSlotModal() {
+            const modal = new bootstrap.Modal(document.getElementById('slotModal'));
+            modal.show();
+        }
+
+        // Add time slots
+        async function addTimeSlots() {
+            const date = document.getElementById('slotDate').value;
+            const duration = parseInt(document.getElementById('slotDuration').value);
+            const selectedTimes = [];
+            
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                selectedTimes.push(checkbox.value);
+            });
+            
+            if (!date || selectedTimes.length === 0) {
+                alert('Please select a date and at least one time slot');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch('/api/appointments/slots', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        date: date,
+                        times: selectedTimes,
+                        duration: duration
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Time slots added successfully!');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('slotModal'));
+                    modal.hide();
+                    document.getElementById('slotForm').reset();
+                    loadAvailableSlots();
+                } else {
+                    const error = await response.json();
+                    alert('Error adding time slots: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error adding time slots:', error);
+                alert('Failed to add time slots');
+            }
+        }
+
+        // Update appointment status
+        async function updateAppointmentStatus(appointmentId, newStatus) {
+            if (!confirm(`Are you sure you want to ${newStatus} this appointment?`)) {
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('access_token');
+                const response = await fetch(`/api/appointments/${appointmentId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        status: newStatus
+                    })
+                });
+                
+                if (response.ok) {
+                    alert(`Appointment ${newStatus} successfully!`);
+                    loadCounselorAppointments();
+                } else {
+                    const error = await response.json();
+                    alert('Error updating appointment: ' + (error.detail || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error updating appointment:', error);
+                alert('Failed to update appointment');
+            }
+        }
+
+        // Join appointment (placeholder for video call)
+        function joinAppointment(appointmentId) {
+            alert(`Joining appointment ${appointmentId}. This would typically open a video call interface.`);
+            // In a real implementation, this would open a video call or meeting room
+        }
+
+        // Utility functions
+        function showLoading(show) {
+            document.getElementById('loadingSpinner').style.display = show ? 'block' : 'none';
+            document.getElementById('appointmentsContainer').style.display = show ? 'none' : 'block';
+        }
+
+        function showEmptyState() {
+            document.getElementById('appointmentsContainer').innerHTML = '';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 || 12;
+            return `${displayHour}:${minutes} ${ampm}`;
+        }
+
+        // Check authentication status
+        function checkAuthStatus() {
+            const token = localStorage.getItem('access_token');
+            const userName = localStorage.getItem('user_name');
+            
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            if (userName) {
+                document.getElementById('userName').textContent = userName;
+            }
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_name');
+            localStorage.removeItem('user_id');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
